@@ -29,6 +29,10 @@ app = FastAPI(
 )
 
 app.include_router(main_router_v1, prefix=main_api_address)
-app.include_router(main_router_v1, prefix=main_api_address + "/latest")
+app.include_router(main_router_v1,
+                   prefix=main_api_address + "/latest",
+                   tags=["latest"])
 
-app.include_router(main_router_v1, prefix=main_api_address + "/v1")
+app.include_router(main_router_v1,
+                   prefix=main_api_address + "/v1",
+                   tags=["v1"])

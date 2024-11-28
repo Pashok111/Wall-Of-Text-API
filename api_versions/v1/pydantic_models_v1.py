@@ -1,13 +1,13 @@
 # Main imports
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 # Other imports
-from typing import Optional, Dict, Literal
+from typing import Annotated
 from datetime import datetime
 
 
 class Error(BaseModel):
-    error: Dict[Literal["error"], str]
+    error: str
 
 
 class TextBase(BaseModel):
@@ -16,7 +16,8 @@ class TextBase(BaseModel):
 
 
 class TextCreate(TextBase):
-    username: Optional[str] = "Anonymous"
+    username: Annotated[str, StringConstraints(min_length=3)] = "Anonymous"
+    text: Annotated[str, StringConstraints(min_length=1)]
 
 
 class TextResponse(TextBase):

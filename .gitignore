@@ -4,3 +4,4 @@
 __pycache__/
 test.py
 wall_of_text.db
+log.log
