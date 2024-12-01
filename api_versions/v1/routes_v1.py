@@ -1,6 +1,6 @@
 # Main imports
 from fastapi import APIRouter, Response, status, Query
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse
 
 # Other imports
 from typing import Annotated, Dict, List
@@ -30,13 +30,14 @@ async def root(response: Response) -> Dict[str, str]:
             f"Main address: {main_address}."}
 
 
-@main_router_v1.get("/docs")
-async def docs(response: Response) -> HTMLResponse:
+@main_router_v1.get("/docs", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+async def docs(response: Response) -> RedirectResponse:
     response.status_code = status.HTTP_301_MOVED_PERMANENTLY
     return RedirectResponse(f"{main_api_address}/docs")
 
 
 @main_router_v1.post("/texts",
+                     status_code=status.HTTP_201_CREATED,
                      responses={201: {"model": TextResponse},
                                 500: {"model": Error}})
 async def create_text(response: Response,

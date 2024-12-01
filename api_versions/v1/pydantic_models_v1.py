@@ -16,8 +16,14 @@ class TextBase(BaseModel):
 
 
 class TextCreate(TextBase):
-    username: Annotated[str, StringConstraints(min_length=3)] = "Anonymous"
-    text: Annotated[str, StringConstraints(min_length=1)]
+    username: Annotated[
+        str,
+        StringConstraints(min_length=3, strip_whitespace=True)  # noqa
+    ] = "Anonymous"
+    text: Annotated[
+        str,
+        StringConstraints(min_length=1, strip_whitespace=True)  # noqa
+    ]
 
 
 class TextResponse(TextBase):
