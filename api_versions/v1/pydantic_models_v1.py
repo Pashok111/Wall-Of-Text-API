@@ -1,9 +1,9 @@
 # Main imports
 from pydantic import BaseModel, Field, StringConstraints
+from pydantic.functional_validators import BeforeValidator
 
 # Other imports
-from typing import Annotated
-from datetime import datetime
+from typing import Annotated, List
 
 
 class Error(BaseModel):
@@ -13,6 +13,7 @@ class Error(BaseModel):
 class TextBase(BaseModel):
     username: str
     text: str
+    parent_id: int = -1
 
 
 class TextCreate(TextBase):
@@ -28,7 +29,8 @@ class TextCreate(TextBase):
 
 class TextResponse(TextBase):
     id: int
-    created_at_utc: datetime
+    utc_created_at: Annotated[float, BeforeValidator(lambda t: t.timestamp())]
+    comments: List["TextResponse"] = []
 
 
 class GetTextsQueryParams(BaseModel):
@@ -36,3 +38,8 @@ class GetTextsQueryParams(BaseModel):
 
     limit: int = Field(100, ge=1, le=1000)
     offset: int = Field(0, ge=0)
+    parent_id: int = None
+    include_comments: bool = True
+
+
+TextResponse.model_rebuild()

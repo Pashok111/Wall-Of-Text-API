@@ -5,8 +5,12 @@ from sqlalchemy.orm import sessionmaker
 
 # Other imports
 from datetime import datetime, UTC
+import tomllib
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///wall_of_text.db"
+with open("config.toml", "rb") as f:
+    config = tomllib.load(f)
+db_file = config["db_file"]
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_file}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -18,15 +22,17 @@ class Text(Base):
     __tablename__ = "texts"
 
     id = Column(Integer, primary_key=True, index=True)
+    parent_id = Column(Integer, index=True, default=-1)
     username = Column(String, index=True)
     text = Column(String, index=True)
-    created_at_utc: datetime = Column(DateTime, default=lambda: datetime.now(UTC))
+    utc_created_at: datetime = Column(DateTime,
+                                      default=lambda: datetime.now(UTC))
 
     def __repr__(self):
         return (f"Text(id={self.id}, "
                 f"username={self.username}, "
                 f"text={self.text}, "
-                f"created_at_utc={self.created_at_utc})")
+                f"created_at_utc={self.utc_created_at})")
 
 
 Base.metadata.create_all(bind=engine)

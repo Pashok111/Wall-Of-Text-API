@@ -1,6 +1,7 @@
 .idea/
 .venv/
 .mypy_cache/
+.DS_Store
 __pycache__/
 test.py
 wall_of_text.db
