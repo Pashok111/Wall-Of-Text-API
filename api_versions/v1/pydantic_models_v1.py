@@ -1,16 +1,26 @@
+# Other imports
+from typing import Annotated, List
+
 # Main imports
 from pydantic import BaseModel, Field, StringConstraints
 from pydantic.functional_validators import BeforeValidator
 
-# Other imports
-from typing import Annotated, List
-
 
 class Error(BaseModel):
+    """
+    Represents an error message.
+
+    Attributes:
+
+    - error (str): The error message.
+    """
     error: str
 
 
 class TextBase(BaseModel):
+    """
+    Base model for text-related models.
+    """
     username: str
     text: str
     parent_id: int = -1
@@ -30,7 +40,8 @@ class TextCreate(TextBase):
 class TextResponse(TextBase):
     id: int
     utc_created_at: Annotated[float, BeforeValidator(lambda t: t.timestamp())]
-    comments: List["TextResponse"] = []
+    comment_depth: int = 0
+    comments: List["TextResponse"] = Field(default_factory=list)  # noqa
 
 
 class GetTextsQueryParams(BaseModel):

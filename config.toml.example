@@ -1,0 +1,9 @@
+"main_api_address" = ""
+"main_address" = ""
+"db_file" = "wall_of_text.db"
+
+"static_dir" = "static"
+"favicon" = "favicon.png"
+"redoc_js" = "redoc.standalone.js"
+"swagger_js" = "swagger-ui-bundle.js"
+"swagger_css" = "swagger-ui.css"

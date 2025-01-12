@@ -1,39 +1,65 @@
+# Other imports
+import sys
+from typing import Annotated, Dict, List
+
 # Main imports
-from fastapi import APIRouter, Response, status, Query
+from fastapi import APIRouter, Request, Response, status, Query
 from fastapi.responses import RedirectResponse
 
-# Other imports
-from typing import Annotated, Dict, List
-import tomllib
-
-# Imports from main project
-from api_versions.v1.pydantic_models_v1 import (
+# Imports from project
+from .database_v1 import SessionLocal, Text
+from .pydantic_models_v1 import (
     Error,
-    TextCreate, TextResponse,
-    GetTextsQueryParams)
-from api_versions.v1.database_v1 import SessionLocal, Text
+    TextCreate,
+    TextResponse,
+    GetTextsQueryParams
+)
 
-with open("config.toml", "rb") as f:
-    config = tomllib.load(f)
+# TOML import
+if sys.version_info < (3, 11):
+    try:
+        import tomli as tomllib  # noqa
+    except ImportError as ex:
+        raise ImportError("tomli is required for Python < 3.11") from ex # noqa
+else:
+    import tomllib
+
+# Config loading
+try:
+    with open("config.toml", "rb") as f:
+        config = tomllib.load(f)
+except FileNotFoundError:
+    raise FileNotFoundError("config.toml not found")
+
 main_api_address = config["main_api_address"]
+main_api_address = main_api_address if main_api_address else "/api"
 main_address = config["main_address"]
+main_address = f" Main address: {main_address}." if main_address else ""
 main_router_v1 = APIRouter()
 
 
 @main_router_v1.get("")
-async def root(response: Response) -> Dict[str, str]:
+async def root(response: Response, request: Request) -> Dict[str, str]:
     response.status_code = status.HTTP_200_OK
     return {"welcome_text":
             "This is the Wall Of Text API. "
-            f"You can check the docs at {main_api_address}/docs "
-            f"and {main_api_address}/redoc. "
-            f"Main address: {main_address}."}
+            f"You can check the docs at {request.url}/docs "
+            f"and {request.url}/redoc.{main_address}"}
 
 
-@main_router_v1.get("/docs", status_code=status.HTTP_301_MOVED_PERMANENTLY)
-async def docs(response: Response) -> RedirectResponse:
-    response.status_code = status.HTTP_301_MOVED_PERMANENTLY
-    return RedirectResponse(f"{main_api_address}/docs")
+@main_router_v1.get("/docs", status_code=301, include_in_schema=False)
+async def docs_redirect() -> RedirectResponse:
+    return RedirectResponse(f"{main_api_address}/docs", status_code=301)
+
+
+@main_router_v1.get("/redoc", status_code=301, include_in_schema=False)
+async def redoc_redirect() -> RedirectResponse:
+    return RedirectResponse(f"{main_api_address}/redoc", status_code=301)
+
+
+@main_router_v1.get("/openapi.json", status_code=301, include_in_schema=False)
+async def openapi_json_redirect() -> RedirectResponse:
+    return RedirectResponse(f"{main_api_address}/openapi.json", status_code=301)
 
 
 @main_router_v1.post("/texts",
@@ -51,8 +77,8 @@ async def create_text(response: Response,
     if parent_id != -1:
         db = SessionLocal()
         try:
-            db_text = db.query(Text).get(parent_id)
-        except Exception as e:
+            db_text = db.get(Text, parent_id)
+        except Exception as e:  # pylint: disable=broad-exception-caught
             response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             return Error(error=str(e))
         finally:
@@ -67,7 +93,7 @@ async def create_text(response: Response,
         db.add(db_text)
         db.commit()
         db.refresh(db_text)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return Error(error=str(e))
     finally:
@@ -93,7 +119,7 @@ async def get_texts(response: Response,
     try:
         texts = db.query(Text).filter(Text.parent_id == parent_id).limit(
             limit).offset(limit * offset).all()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return Error(error=str(e))
     finally:
@@ -121,8 +147,8 @@ async def get_text_by_id(response: Response,
                          ) -> TextResponse | Error:
     db = SessionLocal()
     try:
-        db_text = db.query(Text).get(text_id)
-    except Exception as e:
+        db_text = db.get(Text, text_id)
+    except Exception as e:  # pylint: disable=broad-exception-caught
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return Error(error=str(e))
     finally:
@@ -150,6 +176,9 @@ def grab_comments(text_response: TextResponse) -> TextResponse:
     if not comments:
         return text_response
 
-    text_response.comments = [grab_comments(TextResponse(**comment.__dict__))
-                              for comment in comments]
+    for comment in comments:
+        comment.comment_depth = text_response.comment_depth + 1
+        text_response.comments.append(
+            grab_comments(TextResponse(**comment.__dict__))
+        )
     return text_response

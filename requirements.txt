@@ -1,4 +1,4 @@
-fastapi[standard]==0.115.5
-pydantic==2.10.1
-sqlalchemy==2.0.36
-uvicorn==0.32.1
+fastapi[standard]>=0.115.5
+pydantic>=2.4.2
+sqlalchemy>=2.0.36
+uvicorn>=0.32.1

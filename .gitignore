@@ -1,8 +1,9 @@
-.idea/
-.venv/
-.mypy_cache/
-.DS_Store
-__pycache__/
-test.py
-wall_of_text.db
-log.log
+*.idea/
+*.venv/
+*.mypy_cache/
+*__pycache__/
+*.DS_Store
+*.db
+*.log
+*test*.py
+config.toml
