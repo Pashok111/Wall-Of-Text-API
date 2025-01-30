@@ -1,5 +1,5 @@
 # Wall Of Text API
-Little project for uploading and reading some texts and comments or them.
+Little project for uploading and reading some texts and comments for them.
 
 You can check this API at https://pashok11.tw1.su/apis/wall_of_text/docs
 ## How to use
