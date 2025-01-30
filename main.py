@@ -9,44 +9,42 @@ https://github.com/Pashok111/wall-of-text-api
 """
 
 # Other imports
-import sys
+import os
 
 # Main imports
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.openapi.docs import (
-    get_swagger_ui_html, get_redoc_html, get_swagger_ui_oauth2_redirect_html
+    get_swagger_ui_html,
+    get_redoc_html,
+    get_swagger_ui_oauth2_redirect_html
 )
 from fastapi.staticfiles import StaticFiles
 
 # Imports from project
-from api_versions.v1.routes_v1 import main_router_v1
-
-# TOML import
-if sys.version_info < (3, 11):
-    try:
-        import tomli as tomllib  # noqa
-    except ImportError as ex:
-        raise ImportError("tomli is required for Python < 3.11") from ex # noqa
-else:
-    import tomllib
+from api_versions import main_router_v1
 
 # Config loading
-try:
-    with open("config.toml", "rb") as f:
-        config = tomllib.load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("config.toml not found")
-
-main_api_address = config["main_api_address"]
-main_api_address = main_api_address if main_api_address else "/api"
-main_address = config["main_address"]
+load_dotenv()
+main_api_address = os.getenv("MAIN_API_ADDRESS", "/api")
+if not main_api_address.startswith("/"):
+    main_api_address = f"/{main_api_address}"
+main_address = os.getenv("MAIN_ADDRESS")
 main_address = f"\nMain address: {main_address}." if main_address else ""
 
-static_dir = config["static_dir"] + "/"
-favicon = static_dir + config["favicon"]
-redoc_js = static_dir + config["redoc_js"]
-swagger_js = static_dir + config["swagger_js"]
-swagger_css = static_dir + config["swagger_css"]
+static_dir = os.getenv("STATIC_DIR", "static")
+favicon = os.path.join(
+    static_dir, os.getenv("FAVICON", "favicon.png")
+)
+redoc_js = os.path.join(
+    static_dir, os.getenv("REDOC_JS", "redoc.standalone.js")
+)
+swagger_js = os.path.join(
+    static_dir, os.getenv("SWAGGER_JS", "swagger-ui-bundle.js")
+)
+swagger_css = os.path.join(
+    static_dir, os.getenv("SWAGGER_CSS", "swagger-ui.css")
+)
 
 DESCRIPTION = ("Wall Of Text API\n"
                f"You can check the docs at {main_api_address}/docs "
@@ -61,9 +59,11 @@ app = FastAPI(
     redoc_url=None,
     swagger_ui_oauth2_redirect_url=f"{main_api_address}/docs/oauth2-redirect"
 )
-app.mount(path=f"{main_api_address}/{static_dir}",
-          app=StaticFiles(directory="static"),
-          name="static")
+app.mount(
+    path=f"{main_api_address}/{static_dir}",
+    app=StaticFiles(directory=static_dir),
+    name="static"
+)
 
 
 @app.get("/", include_in_schema=False)
@@ -103,13 +103,18 @@ async def custom_redoc():
     )
 
 
-app.include_router(main_router_v1,
-                   prefix=main_api_address,
-                   tags=["default"], include_in_schema=False)
-app.include_router(main_router_v1,
-                   prefix=main_api_address + "/latest",
-                   tags=["latest"])
+app.include_router(
+    main_router_v1,
+    prefix=main_api_address,
+    tags=["default"],
+    include_in_schema=False
+)
+app.include_router(
+    main_router_v1,
+    prefix=main_api_address + "/latest",
+    tags=["latest"]
+)
 
-app.include_router(main_router_v1,
-                   prefix=main_api_address + "/v1",
-                   tags=["v1"])
+app.include_router(
+    main_router_v1, prefix=main_api_address + "/v1", tags=["v1"]
+)

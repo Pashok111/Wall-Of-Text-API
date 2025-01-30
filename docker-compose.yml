@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    env_file: ./.env
+    volumes:
+      - wall_of_text:/app/db_n_logs
+    ports:
+      - "${PORT}:${PORT}"
+
+volumes:
+  wall_of_text:

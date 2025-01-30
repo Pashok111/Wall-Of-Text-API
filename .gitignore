@@ -6,4 +6,4 @@
 *.db
 *.log
 *test*.py
-config.toml
+.env

@@ -10,8 +10,6 @@ To use this module, you need to install the required dependencies:
 
 - sqlalchemy
 
-- tomli (if you're using Python < 3.11)
-
 You can find more information about the project on GitHub:
 https://github.com/Pashok111/wall-of-text-api
 
@@ -27,33 +25,21 @@ Example usage:
 """
 
 # Other imports
-import sys
+import os
 from datetime import datetime, UTC
 
 # Main imports
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# TOML import
-if sys.version_info < (3, 11):
-    try:
-        import tomli as tomllib  # noqa
-    except ImportError as ex:
-        raise ImportError("tomli is required for Python < 3.11") from ex # noqa
-else:
-    import tomllib
-
 # Config loading
-try:
-    with open("config.toml", "rb") as f:
-        config = tomllib.load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("config.toml not found")
-
-db_file = config["db_file"]
-if not db_file:
-    raise ValueError("db_file is not specified in config.toml")
+load_dotenv()
+db_file = os.path.join(
+    os.getenv("DB_N_LOGS_FOLDER", "db_n_logs"),
+    os.getenv("DB_FILE", "wall_of_text.db")
+)
 if not db_file.endswith(".db"):
     db_file += ".db"
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_file}"

@@ -1,8 +1,9 @@
 # Other imports
-import sys
+import os
 from typing import Annotated, Dict, List
 
 # Main imports
+from dotenv import load_dotenv
 from fastapi import APIRouter, Request, Response, status, Query
 from fastapi.responses import RedirectResponse
 
@@ -15,26 +16,12 @@ from .pydantic_models_v1 import (
     GetTextsQueryParams
 )
 
-# TOML import
-if sys.version_info < (3, 11):
-    try:
-        import tomli as tomllib  # noqa
-    except ImportError as ex:
-        raise ImportError("tomli is required for Python < 3.11") from ex # noqa
-else:
-    import tomllib
-
 # Config loading
-try:
-    with open("config.toml", "rb") as f:
-        config = tomllib.load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("config.toml not found")
-
-main_api_address = config["main_api_address"]
-main_api_address = main_api_address if main_api_address else "/api"
-main_address = config["main_address"]
+load_dotenv()
+main_api_address = os.getenv("MAIN_API_ADDRESS", "/api")
+main_address = os.getenv("MAIN_ADDRESS")
 main_address = f" Main address: {main_address}." if main_address else ""
+
 main_router_v1 = APIRouter()
 
 
@@ -59,17 +46,24 @@ async def redoc_redirect() -> RedirectResponse:
 
 @main_router_v1.get("/openapi.json", status_code=301, include_in_schema=False)
 async def openapi_json_redirect() -> RedirectResponse:
-    return RedirectResponse(f"{main_api_address}/openapi.json", status_code=301)
+    return RedirectResponse(
+        f"{main_api_address}/openapi.json", status_code=301
+    )
 
 
-@main_router_v1.post("/texts",
-                     status_code=status.HTTP_201_CREATED,
-                     responses={201: {"model": TextResponse},
-                                400: {"model": Error},
-                                500: {"model": Error}})
-async def create_text(response: Response,
-                      text_create: TextCreate
-                      ) -> TextResponse | Error:
+@main_router_v1.post(
+    "/texts",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {"model": TextResponse},
+        400: {"model": Error},
+        500: {"model": Error}
+    }
+)
+async def create_text(
+        response: Response,
+        text_create: TextCreate
+) -> TextResponse | Error:
     parent_id = text_create.parent_id
     username = text_create.username
     text = text_create.text
@@ -103,13 +97,18 @@ async def create_text(response: Response,
     return db_text
 
 
-@main_router_v1.get("/texts",
-                    responses={200: {"model": List[TextResponse]},
-                               400: {"model": Error},
-                               500: {"model": Error}})
-async def get_texts(response: Response,
-                    filter_query: Annotated[GetTextsQueryParams, Query()]
-                    ) -> List[TextResponse] | Error:
+@main_router_v1.get(
+    "/texts",
+    responses={
+        200: {"model": List[TextResponse]},
+        400: {"model": Error},
+        500: {"model": Error}
+    }
+)
+async def get_texts(
+        response: Response,
+        filter_query: Annotated[GetTextsQueryParams, Query()]
+) -> List[TextResponse] | Error:
     limit = filter_query.limit
     offset = filter_query.offset
     parent_id = filter_query.parent_id or -1
@@ -137,14 +136,19 @@ async def get_texts(response: Response,
     return [grab_comments(i) for i in _response]
 
 
-@main_router_v1.get("/texts/{text_id}",
-                    responses={200: {"model": TextResponse},
-                               400: {"model": Error},
-                               500: {"model": Error}})
-async def get_text_by_id(response: Response,
-                         text_id: int,
-                         include_comments: bool = True
-                         ) -> TextResponse | Error:
+@main_router_v1.get(
+    "/texts/{text_id}",
+    responses={
+        200: {"model": TextResponse},
+        400: {"model": Error},
+        500: {"model": Error}
+    }
+)
+async def get_text_by_id(
+        response: Response,
+        text_id: int,
+        include_comments: bool = True
+) -> TextResponse | Error:
     db = SessionLocal()
     try:
         db_text = db.get(Text, text_id)
