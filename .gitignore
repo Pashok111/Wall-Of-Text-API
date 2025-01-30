@@ -1,6 +1,9 @@
-.idea/
-.venv/
-.mypy_cache/
-__pycache__/
-test.py
-wall_of_text.db
+*.idea/
+*.venv/
+*.mypy_cache/
+*__pycache__/
+*.DS_Store
+*.db
+*.log
+*test*.py
+.env
